@@ -1,1 +1,127 @@
-<h1>我的第一个网站</h1>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工作计划日历</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <h1>📅 工作计划日历</h1>
+      <p class="subtitle">点击日期添加任务，点击任务块可编辑</p>
+    </header>
+
+    <main>
+      <section class="top-section" aria-label="日历与日程">
+        <!-- 块 A：月历 -->
+        <div class="block block-a" id="blockA">
+          <div class="block-header">
+            <h2>月历</h2>
+            <div class="calendar-controls">
+              <button id="prevMonth" class="icon-btn" aria-label="上个月">‹</button>
+              <select id="yearSelect" aria-label="年份"></select>
+              <select id="monthSelect" aria-label="月份"></select>
+              <button id="nextMonth" class="icon-btn" aria-label="下个月">›</button>
+            </div>
+          </div>
+          <div class="calendar-weekdays" aria-hidden="true">
+            <span>日</span><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span>
+          </div>
+          <div class="calendar-grid" id="calendarGrid"></div>
+          <div class="calendar-legend">
+            <span class="legend-item"><span class="dot heat-0"></span> 无任务</span>
+            <span class="legend-item"><span class="dot heat-1"></span> 1-2</span>
+            <span class="legend-item"><span class="dot heat-2"></span> 3-5</span>
+            <span class="legend-item"><span class="dot heat-3"></span> 6+</span>
+          </div>
+        </div>
+
+        <!-- 块 B：当天日程 -->
+        <div class="block block-b" id="blockB">
+          <div class="block-header">
+            <h2 id="scheduleDateTitle">日程</h2>
+            <button id="trashToggle" class="icon-btn trash-btn" title="删除模式" aria-pressed="false">🗑️</button>
+          </div>
+          <div class="schedule-wrapper">
+            <div class="time-labels" id="timeLabels" aria-hidden="true"></div>
+            <div class="schedule-content" id="scheduleContent"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="bottom-section" aria-label="留言与公告">
+        <!-- 块 C：留言板 -->
+        <div class="block block-c">
+          <div class="block-header"><h2>💬 留言板</h2></div>
+          <div class="message-list" id="messageList"></div>
+          <form id="messageForm" class="message-form">
+            <input type="text" id="messageAuthor" placeholder="昵称（可选）" maxlength="30" aria-label="昵称">
+            <textarea id="messageContent" placeholder="写下你的留言..." rows="3" maxlength="500" required aria-label="留言内容"></textarea>
+            <button type="submit" class="btn-primary">提交留言</button>
+          </form>
+        </div>
+
+        <!-- 块 D：公告栏 -->
+        <div class="block block-d">
+          <div class="block-header"><h2>📢 更新公告</h2></div>
+          <div class="announcement-list" id="announcementList"></div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 任务弹窗 -->
+  <div class="modal-overlay" id="taskModal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" hidden>
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">新建任务</h3>
+        <button type="button" class="modal-close" id="modalClose" aria-label="关闭">×</button>
+      </div>
+      <form id="taskForm" class="task-form">
+        <input type="hidden" id="taskId">
+        <div class="form-row">
+          <label for="taskDate">日期</label>
+          <input type="date" id="taskDate" required>
+        </div>
+        <div class="form-row two-col">
+          <div>
+            <label for="taskStart">开始时间</label>
+            <input type="time" id="taskStart" required>
+          </div>
+          <div>
+            <label for="taskEnd">结束时间</label>
+            <input type="time" id="taskEnd" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <label for="taskTitle">任务名称</label>
+          <input type="text" id="taskTitle" placeholder="例如：周会" maxlength="100" required>
+        </div>
+        <div class="form-row">
+          <label for="taskDesc">任务内容</label>
+          <textarea id="taskDesc" placeholder="补充说明..." rows="3" maxlength="500"></textarea>
+        </div>
+        <div class="form-row">
+          <label for="taskLevel">重要程度</label>
+          <select id="taskLevel" required>
+            <option value="1">低</option>
+            <option value="2" selected>中</option>
+            <option value="3">高</option>
+          </select>
+        </div>
+        <div class="form-error" id="formError" role="alert"></div>
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="modalCancel">取消</button>
+          <button type="submit" class="btn-primary" id="modalConfirm">确定</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
