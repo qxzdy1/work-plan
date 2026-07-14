@@ -1,4 +1,4 @@
-/* ===== CSS Variables ===== */
+/* ===== 第一模块：全局变量 ===== */
 :root {
   --bg: linear-gradient(135deg, #f0f4ff 0%, #e0e7ff 100%);
   --card-bg: rgba(255, 255, 255, 0.92);
@@ -20,7 +20,7 @@
   --radius: 16px;
   --transition: all 0.2s ease;
 }
-
+ /* ===== 第二模块：全局重置 ===== */
 * {
   box-sizing: border-box;
 }
@@ -33,7 +33,7 @@ html, body {
   color: var(--text);
   background: var(--bg);
 }
-
+ /* ===== 第三模块：页面外层容器&顶部标题区 ===== */
 .app {
   max-width: 1400px;
   margin: 0 auto;
@@ -57,7 +57,7 @@ html, body {
   font-size: 0.95rem;
 }
 
-/* ===== Layout ===== */
+/* ===== 第四模块：整体布局 ===== */
 .top-section,
 .bottom-section {
   display: grid;
@@ -92,7 +92,7 @@ html, body {
   font-size: 1.25rem;
 }
 
-/* ===== Buttons & Inputs ===== */
+/* ===== 第五模块：按钮&输入框全局样式 ===== */
 button, input, select, textarea {
   font: inherit;
 }
@@ -164,7 +164,7 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
-/* ===== Block A: Calendar ===== */
+/* ===== 第六模块：块A月历样式 ===== */
 .calendar-controls {
   display: flex;
   gap: 6px;
@@ -276,7 +276,7 @@ input:focus, select:focus, textarea:focus {
 .dot.heat-2 { background: var(--heat-2); }
 .dot.heat-3 { background: var(--heat-3); }
 
-/* ===== Block B: Schedule ===== */
+/* ===== 第七模块：块B样式 ===== */
 .schedule-wrapper {
   display: flex;
   flex: 1;
@@ -388,7 +388,7 @@ input:focus, select:focus, textarea:focus {
   cursor: default;
 }
 
-/* ===== Block C & D ===== */
+/* ===== 第八模块：块C和块D样式 ===== */
 .message-list, .announcement-list {
   flex: 1;
   overflow-y: auto;
@@ -441,7 +441,7 @@ input:focus, select:focus, textarea:focus {
   resize: vertical;
 }
 
-/* ===== Modal ===== */
+/* ===== 第九模块：弹窗样式 ===== */
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -534,7 +534,7 @@ input:focus, select:focus, textarea:focus {
   margin-top: 6px;
 }
 
-/* ===== Responsive ===== */
+/* ===== 第十模块：响应式设计 ===== */
 @media (max-width: 960px) {
   .top-section,
   .bottom-section {
