@@ -71,13 +71,16 @@ ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
 
 -- 公开可写策略（目前不做登录，任何人可读写任务和留言）
+DROP POLICY IF EXISTS "allow_all_tasks" ON tasks;
 CREATE POLICY "allow_all_tasks" ON tasks
   FOR ALL USING (true) WITH CHECK (true);
 
+DROP POLICY IF EXISTS "allow_all_messages" ON messages;
 CREATE POLICY "allow_all_messages" ON messages
   FOR ALL USING (true) WITH CHECK (true);
 
 -- 公告只允许读取
+DROP POLICY IF EXISTS "allow_select_announcements" ON announcements;
 CREATE POLICY "allow_select_announcements" ON announcements
   FOR SELECT USING (true);
 ```
