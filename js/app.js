@@ -126,7 +126,8 @@ async function loadMonthTasks() {
     renderCalendar();
   } catch (err) {
     console.error('加载月任务失败:', err);
-    alert('加载月任务失败，请检查 Supabase 配置和 RLS 策略。');
+    const detail = err?.message || err?.code || JSON.stringify(err);
+    alert('加载月任务失败：' + detail + '\n请检查 Supabase 配置、表结构（task_time 应为 timestamptz）和 RLS 策略。');
   }
 }
 
@@ -147,7 +148,8 @@ async function loadDayTasks() {
     renderSchedule();
   } catch (err) {
     console.error('加载日任务失败:', err);
-    alert('加载日任务失败，请检查 Supabase 配置和 RLS 策略。');
+    const detail = err?.message || err?.code || JSON.stringify(err);
+    alert('加载日任务失败：' + detail + '\n请检查 Supabase 配置、表结构（task_time/end_time 应为 timestamptz）和 RLS 策略。');
   }
 }
 

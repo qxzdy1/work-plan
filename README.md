@@ -29,6 +29,23 @@ const SUPABASE_ANON_KEY = 'sb_publishable_sC0evOBDEo9Xw3g_Pnb8Vw_i8QGNw9r';
 进入 Supabase 项目 → `SQL Editor` → `New query`，复制并运行以下脚本：
 
 ```sql
+-- 关键：你的 tasks.task_time 当前是 time 类型（只存时间），
+-- 但日历需要知道日期，所以要先把它转成 timestamptz（日期+时间）。
+-- 如果已有旧数据，里面的时间会配上“今天”的日期；想保留原日期请先备份。
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'tasks' AND column_name = 'task_time'
+      AND data_type LIKE 'time%'
+  ) THEN
+    ALTER TABLE tasks ADD COLUMN task_time_new TIMESTAMPTZ;
+    UPDATE tasks SET task_time_new = CURRENT_DATE + task_time;
+    ALTER TABLE tasks DROP COLUMN task_time;
+    ALTER TABLE tasks RENAME COLUMN task_time_new TO task_time;
+  END IF;
+END $$;
+
 -- 给 tasks 表增加结束时间字段（原有 task_time 作为开始时间）
 ALTER TABLE tasks
 ADD COLUMN IF NOT EXISTS end_time TIMESTAMPTZ;
