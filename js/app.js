@@ -7,6 +7,10 @@
 const { createClient } = window.supabase;
 const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// ===== 日程分栏常量 =====
+const SPLIT_HOUR = 15; // 左列 06:00-15:00，右列 15:00-00:00
+const HALF_HOURS = 9;
+
 // ===== DOM 元素 =====
 const els = {
   yearSelect: document.getElementById('yearSelect'),
@@ -15,9 +19,9 @@ const els = {
   nextMonth: document.getElementById('nextMonth'),
   calendarGrid: document.getElementById('calendarGrid'),
   scheduleDateTitle: document.getElementById('scheduleDateTitle'),
-  timeLabels: document.getElementById('timeLabels'),
-  scheduleContent: document.getElementById('scheduleContent'),
+  scheduleWrapper: document.getElementById('scheduleWrapper'),
   trashToggle: document.getElementById('trashToggle'),
+  addTaskBtn: document.getElementById('addTaskBtn'),
   messageList: document.getElementById('messageList'),
   messageForm: document.getElementById('messageForm'),
   messageAuthor: document.getElementById('messageAuthor'),
@@ -96,6 +100,16 @@ function formatTimeRange(start, end) {
 function getTaskEnd(task) {
   if (task.end_time) return new Date(task.end_time);
   return addHours(new Date(task.task_time), 1);
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function showError(msg) {
@@ -261,88 +275,149 @@ function selectDate(date) {
   }
   renderCalendar();
   loadDayTasks();
-  openTaskModal();
 }
 
-// ===== 日程渲染 =====
+// ===== 日程渲染（双列 + 冲突均分） =====
+function assignLanes(segments) {
+  // 按开始时间排序
+  segments.sort((a, b) => a.segStart - b.segStart || a.segEnd - b.segEnd);
+
+  const lanes = []; // { index, end }
+  segments.forEach(seg => {
+    // 找一个已经结束的车道复用
+    const freeLane = lanes
+      .filter(l => l.end <= seg.segStart)
+      .sort((a, b) => a.index - b.index)[0];
+
+    if (freeLane) {
+      seg.lane = freeLane.index;
+      freeLane.end = seg.segEnd;
+    } else {
+      seg.lane = lanes.length;
+      lanes.push({ index: seg.lane, end: seg.segEnd });
+    }
+  });
+
+  const totalLanes = lanes.length || 1;
+  segments.forEach(seg => {
+    seg.width = 100 / totalLanes;
+    seg.left = seg.lane * seg.width;
+  });
+}
+
+function createTaskBlock(task, topPct, heightPct, leftPct, widthPct) {
+  const start = new Date(task.task_time);
+  const end = getTaskEnd(task);
+
+  const block = document.createElement('div');
+  block.className = `task-block level-${task.level}`;
+  block.style.top = `${topPct}%`;
+  block.style.height = `${heightPct}%`;
+  block.style.left = `calc(${leftPct}% + 3px)`;
+  block.style.width = `calc(${widthPct}% - 6px)`;
+  block.dataset.id = task.id;
+
+  block.innerHTML = `
+    <div class="task-title">${escapeHtml(task.title)}</div>
+    <div class="task-time">${formatTimeRange(start, end)}</div>
+    <button type="button" class="task-delete-btn" data-id="${task.id}" title="删除">×</button>
+  `;
+
+  block.addEventListener('click', (e) => {
+    if (deleteMode || e.target.closest('.task-delete-btn')) return;
+    openTaskModal(task);
+  });
+
+  const delBtn = block.querySelector('.task-delete-btn');
+  delBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    deleteTask(task.id);
+  });
+
+  return block;
+}
+
 function renderSchedule() {
   els.scheduleDateTitle.textContent = `${formatDateCn(selectedDate)} 日程`;
+  const wrapper = els.scheduleWrapper;
+  wrapper.innerHTML = '';
 
-  // 时间标签
-  els.timeLabels.innerHTML = '';
-  for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
-    const label = document.createElement('div');
-    label.className = 'time-label';
-    label.textContent = `${pad(h)}:00`;
-    els.timeLabels.appendChild(label);
-  }
-
-  // 任务块
-  els.scheduleContent.innerHTML = '';
   const dayStart = new Date(selectedDate);
   dayStart.setHours(DAY_START_HOUR, 0, 0, 0);
   const dayEnd = new Date(selectedDate);
   dayEnd.setHours(DAY_END_HOUR, 0, 0, 0);
-  const rangeMs = dayEnd - dayStart;
+  const splitTime = new Date(selectedDate);
+  splitTime.setHours(SPLIT_HOUR, 0, 0, 0);
 
+  const cols = [
+    { baseHour: DAY_START_HOUR, endHour: SPLIT_HOUR },
+    { baseHour: SPLIT_HOUR, endHour: DAY_END_HOUR }
+  ];
+
+  // 先把每个任务按时间拆分到左右两列
+  const colSegments = [[], []];
   dayTasks.forEach(task => {
     const start = new Date(task.task_time);
     const end = getTaskEnd(task);
 
     if (end <= dayStart || start >= dayEnd) return;
 
-    const visibleStart = start < dayStart ? dayStart : start;
-    const visibleEnd = end > dayEnd ? dayEnd : end;
-    const topPct = ((visibleStart - dayStart) / rangeMs) * 100;
-    const heightPct = ((visibleEnd - visibleStart) / rangeMs) * 100;
+    const visStart = start < dayStart ? dayStart : start;
+    const visEnd = end > dayEnd ? dayEnd : end;
 
-    const block = document.createElement('div');
-    block.className = `task-block level-${task.level}`;
-    block.style.top = `${topPct}%`;
-    block.style.height = `${heightPct}%`;
-    block.dataset.id = task.id;
-
-    block.innerHTML = `
-      <div class="task-title">${escapeHtml(task.title)}</div>
-      <div class="task-time">${formatTimeRange(start, end)}</div>
-      <button type="button" class="task-delete-btn" data-id="${task.id}" title="删除">×</button>
-    `;
-
-    block.addEventListener('click', (e) => {
-      if (deleteMode || e.target.closest('.task-delete-btn')) return;
-      openTaskModal(task);
-    });
-
-    const delBtn = block.querySelector('.task-delete-btn');
-    delBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteTask(task.id);
-    });
-
-    els.scheduleContent.appendChild(block);
+    if (visStart < splitTime && visEnd > splitTime) {
+      colSegments[0].push({ task, segStart: visStart, segEnd: splitTime });
+      colSegments[1].push({ task, segStart: splitTime, segEnd: visEnd });
+    } else if (visEnd <= splitTime) {
+      colSegments[0].push({ task, segStart: visStart, segEnd: visEnd });
+    } else {
+      colSegments[1].push({ task, segStart: visStart, segEnd: visEnd });
+    }
   });
 
-  if (dayTasks.length === 0) {
-    const empty = document.createElement('div');
-    empty.className = 'empty-tip';
-    empty.style.position = 'absolute';
-    empty.style.inset = '0';
-    empty.style.display = 'flex';
-    empty.style.alignItems = 'center';
-    empty.style.justifyContent = 'center';
-    empty.textContent = '当天暂无任务，点击左侧日历日期添加';
-    els.scheduleContent.appendChild(empty);
-  }
-}
+  cols.forEach((col, idx) => {
+    const colEl = document.createElement('div');
+    colEl.className = 'schedule-col';
 
-function escapeHtml(str) {
-  if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+    const labelsEl = document.createElement('div');
+    labelsEl.className = 'time-labels';
+    labelsEl.setAttribute('aria-hidden', 'true');
+    for (let h = col.baseHour; h < col.endHour; h++) {
+      const label = document.createElement('div');
+      label.className = 'time-label';
+      label.textContent = `${pad(h)}:00`;
+      labelsEl.appendChild(label);
+    }
+
+    const contentEl = document.createElement('div');
+    contentEl.className = 'schedule-content';
+    if (deleteMode) contentEl.classList.add('delete-mode');
+
+    const segments = colSegments[idx];
+    const msInHalf = HALF_HOURS * 3600 * 1000;
+    const colBase = new Date(selectedDate);
+    colBase.setHours(col.baseHour, 0, 0, 0);
+
+    if (segments.length > 0) {
+      assignLanes(segments);
+      segments.forEach(seg => {
+        const topPct = ((seg.segStart - colBase) / msInHalf) * 100;
+        const heightPct = ((seg.segEnd - seg.segStart) / msInHalf) * 100;
+        const block = createTaskBlock(seg.task, topPct, heightPct, seg.left, seg.width);
+        contentEl.appendChild(block);
+      });
+    } else if (dayTasks.length === 0 && idx === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-tip';
+      empty.style.cssText = 'position:absolute;inset:0;display:flex;align-items:center;justify-content:center;';
+      empty.textContent = '当天暂无任务，点击右上角 + 添加';
+      contentEl.appendChild(empty);
+    }
+
+    colEl.appendChild(labelsEl);
+    colEl.appendChild(contentEl);
+    wrapper.appendChild(colEl);
+  });
 }
 
 // ===== 任务弹窗 =====
@@ -452,7 +527,9 @@ function toggleDeleteMode() {
   deleteMode = !deleteMode;
   els.trashToggle.classList.toggle('active', deleteMode);
   els.trashToggle.setAttribute('aria-pressed', String(deleteMode));
-  els.scheduleContent.classList.toggle('delete-mode', deleteMode);
+  document.querySelectorAll('.schedule-content').forEach(el => {
+    el.classList.toggle('delete-mode', deleteMode);
+  });
 }
 
 // ===== 留言与公告 =====
@@ -489,16 +566,15 @@ function renderAnnouncements(list) {
     return;
   }
 
-  list.forEach(item => {
-    const div = document.createElement('div');
-    div.className = 'announcement-item';
-    const created = new Date(item.created_at);
-    div.innerHTML = `
-      <div class="announcement-meta">${created.toLocaleString('zh-CN')}</div>
-      <div class="announcement-content">${escapeHtml(item.content)}</div>
-    `;
-    container.appendChild(div);
-  });
+  const item = list[0];
+  const created = new Date(item.created_at);
+  const div = document.createElement('div');
+  div.className = 'announcement-full';
+  div.innerHTML = `
+    <div class="announcement-meta">${created.toLocaleString('zh-CN')}</div>
+    <div class="announcement-content">${escapeHtml(item.content)}</div>
+  `;
+  container.appendChild(div);
 }
 
 async function submitMessage(e) {
@@ -568,6 +644,7 @@ function bindEvents() {
     loadMonthTasks();
   });
 
+  els.addTaskBtn.addEventListener('click', () => openTaskModal());
   els.trashToggle.addEventListener('click', toggleDeleteMode);
 
   els.modalClose.addEventListener('click', closeTaskModal);

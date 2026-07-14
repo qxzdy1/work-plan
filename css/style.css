@@ -12,9 +12,9 @@
   --level-medium: #f59e0b;
   --level-high: #ef4444;
   --heat-0: #ffffff;
-  --heat-1: #dbeafe;
-  --heat-2: #93c5fd;
-  --heat-3: #2563eb;
+  --heat-1: #d1fae5;
+  --heat-2: #34d399;
+  --heat-3: #059669;
   --border: #e5e7eb;
   --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
   --radius: 16px;
@@ -199,7 +199,7 @@ input:focus, select:focus, textarea:focus {
   position: relative;
   min-height: 64px;
   border-radius: 12px;
-  border: 2px solid transparent;
+  border: 1px solid #d1d5db;
   padding: 6px;
   cursor: pointer;
   display: flex;
@@ -213,6 +213,7 @@ input:focus, select:focus, textarea:focus {
 .calendar-day:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: #9ca3af;
 }
 
 .calendar-day.other-month {
@@ -222,6 +223,7 @@ input:focus, select:focus, textarea:focus {
 
 .calendar-day.selected {
   border-color: var(--primary);
+  border-width: 2px;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
@@ -244,9 +246,9 @@ input:focus, select:focus, textarea:focus {
   display: none;
 }
 
-.calendar-day.heat-1 { background: var(--heat-1); }
-.calendar-day.heat-2 { background: var(--heat-2); color: #fff; }
-.calendar-day.heat-3 { background: var(--heat-3); color: #fff; }
+.calendar-day.heat-1 { background: var(--heat-1); color: var(--text); border-color: #a7f3d0; }
+.calendar-day.heat-2 { background: var(--heat-2); color: #fff; border-color: #10b981; }
+.calendar-day.heat-3 { background: var(--heat-3); color: #fff; border-color: #047857; }
 
 .calendar-legend {
   display: flex;
@@ -277,15 +279,34 @@ input:focus, select:focus, textarea:focus {
 .dot.heat-3 { background: var(--heat-3); }
 
 /* ===== Block B: Schedule ===== */
-.schedule-wrapper {
+.schedule-actions {
   display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.add-btn:hover {
+  background: #dbeafe;
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.schedule-wrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
   flex: 1;
   min-height: 560px;
-  gap: 8px;
+}
+
+.schedule-col {
+  display: flex;
+  gap: 6px;
+  min-height: 0;
 }
 
 .time-labels {
-  width: 52px;
+  width: 40px;
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
@@ -293,10 +314,10 @@ input:focus, select:focus, textarea:focus {
 
 .time-label {
   flex: 1;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   color: var(--text-secondary);
   text-align: right;
-  padding-right: 6px;
+  padding-right: 4px;
   display: flex;
   align-items: flex-start;
   justify-content: flex-end;
@@ -310,9 +331,9 @@ input:focus, select:focus, textarea:focus {
     repeating-linear-gradient(
       to bottom,
       transparent,
-      transparent calc(100% / 18 - 1px),
-      var(--border) calc(100% / 18 - 1px),
-      var(--border) calc(100% / 18)
+      transparent calc(100% / 9 - 1px),
+      var(--border) calc(100% / 9 - 1px),
+      var(--border) calc(100% / 9)
     );
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -321,8 +342,6 @@ input:focus, select:focus, textarea:focus {
 
 .task-block {
   position: absolute;
-  left: 6px;
-  right: 6px;
   border-radius: 8px;
   padding: 6px 8px;
   color: #fff;
@@ -330,10 +349,11 @@ input:focus, select:focus, textarea:focus {
   overflow: hidden;
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, left 0.15s ease, width 0.15s ease;
   display: flex;
   flex-direction: column;
   gap: 2px;
+  box-sizing: border-box;
 }
 
 .task-block:hover {
@@ -389,7 +409,39 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ===== Block C & D ===== */
-.message-list, .announcement-list {
+.announcement-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  min-height: 0;
+}
+
+.announcement-full {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcement-full .announcement-meta {
+  justify-content: center;
+  font-size: 0.85rem;
+  margin-bottom: 0;
+}
+
+.announcement-full .announcement-content {
+  font-size: clamp(1rem, 2.2vw, 1.35rem);
+  line-height: 1.8;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--text);
+}
+
+.message-list {
   flex: 1;
   overflow-y: auto;
   max-height: 320px;
@@ -419,7 +471,7 @@ input:focus, select:focus, textarea:focus {
   color: var(--text);
 }
 
-.message-content, .announcement-content {
+.message-content {
   word-break: break-word;
   line-height: 1.5;
 }
@@ -570,11 +622,21 @@ input:focus, select:focus, textarea:focus {
 
   .schedule-wrapper {
     min-height: 420px;
+    gap: 8px;
+  }
+
+  .time-labels {
+    width: 30px;
+  }
+
+  .time-label {
+    font-size: 0.6rem;
+    padding-right: 2px;
   }
 
   .task-block {
-    font-size: 0.75rem;
-    padding: 4px 6px;
+    font-size: 0.7rem;
+    padding: 3px 4px;
   }
 
   .form-row.two-col {

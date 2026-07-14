@@ -15,9 +15,9 @@ const DAY_END_HOUR = 24;
 const HOURS_COUNT = DAY_END_HOUR - DAY_START_HOUR;
 
 const LEVELS = {
-  1: { label: '低', color: 'var(--level-low)' },
-  2: { label: '中', color: 'var(--level-medium)' },
-  3: { label: '高', color: 'var(--level-high)' }
+  1: { label: '普通任务', color: 'var(--level-low)' },
+  2: { label: '中级任务', color: 'var(--level-medium)' },
+  3: { label: '高级任务', color: 'var(--level-high)' }
 };
 
 const HEAT_LEVELS = [
